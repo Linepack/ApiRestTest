@@ -10,6 +10,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -34,7 +35,7 @@ public class UsuarioFacadeREST extends AbstractFacade<Usuario> {
     public UsuarioFacadeREST() {
         super(Usuario.class);
     }
-
+/*
     @POST
     @Override
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
@@ -77,12 +78,7 @@ public class UsuarioFacadeREST extends AbstractFacade<Usuario> {
         return super.findRange(new int[]{from, to});
     }
 
-    @GET
-    @Path("count")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String countREST() {
-        return String.valueOf(super.count());
-    }
+    */
 
     @Override
     protected EntityManager getEntityManager() {
@@ -90,6 +86,18 @@ public class UsuarioFacadeREST extends AbstractFacade<Usuario> {
         em = emf.createEntityManager();
         em.getTransaction().begin();
         return em;
+    }
+    
+    @GET
+    @Path("{email}/{password}")
+    @Produces({MediaType.TEXT_PLAIN})
+    public Integer validaLogin(@PathParam("email") String email,@PathParam("password") String password){
+        Query query = getEntityManager().createQuery(""
+                + "select u"
+                + "  from Usuario u"
+                + " where u.email = '"+email+"'"
+                + "   and u.password = '"+password+"'");            
+        return query.getResultList().isEmpty() ? 0 : 1;
     }
     
 }
