@@ -5,37 +5,36 @@
  */
 package org.linepack.apiresttest.service;
 
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.ParameterMode;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
+import javax.persistence.StoredProcedureQuery;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import org.linepack.apiresttest.model.Mensagem;
 import org.linepack.apiresttest.model.Usuario;
 
 /**
  *
  * @author leandro
  */
-@Path("usuario")
-public class UsuarioFacadeREST extends AbstractFacade<Usuario> {
+@Path("login")
+public class Login {
 
     @PersistenceContext(unitName = "homologa")
     private EntityManager em;
 
-    public UsuarioFacadeREST() {
-        super(Usuario.class);
-    }
-/*
+    /*
     @POST
     @Override
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
@@ -78,26 +77,52 @@ public class UsuarioFacadeREST extends AbstractFacade<Usuario> {
         return super.findRange(new int[]{from, to});
     }
 
-    */
-
-    @Override
+     */
     protected EntityManager getEntityManager() {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("homologa");
         em = emf.createEntityManager();
         em.getTransaction().begin();
         return em;
     }
-    
+
     @GET
     @Path("{email}/{password}")
-    @Produces({MediaType.TEXT_PLAIN})
-    public Integer validaLogin(@PathParam("email") String email,@PathParam("password") String password){
-        Query query = getEntityManager().createQuery(""
-                + "select u"
-                + "  from Usuario u"
-                + " where u.email = '"+email+"'"
-                + "   and u.password = '"+password+"'");            
-        return query.getResultList().isEmpty() ? 0 : 1;
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public List<Usuario> validaLogin(
+            @PathParam("email") String email,
+            @PathParam("password") String password,
+            @HeaderParam("token") String token) {
+
+        StoredProcedureQuery query = getEntityManager().createStoredProcedureQuery("pkg_unimob.prc_login_cooperado");
+
+        query.registerStoredProcedureParameter("p_email", String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_senha", String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_token", String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_mensagem", String.class, ParameterMode.OUT);
+        query.registerStoredProcedureParameter("p_data", Usuario.class, ParameterMode.REF_CURSOR);
+
+        query.setParameter("p_email", email);
+        query.setParameter("p_senha", password);
+        query.setParameter("p_token", token);
+
+        boolean execute = query.execute();
+
+        List<Usuario> usuarios = new ArrayList<Usuario>();
+        List<Object> results = (List<Object>) query.getResultList();
+                
+        if (results != null) {
+            for (Object elem : results) {
+                Object[] each = (Object[]) elem;
+                
+                Usuario usuario = new Usuario();
+                usuario.setId((BigDecimal) each[0]);
+                usuario.setNome((String) each[1]);
+                usuario.setCaminhoFoto((String) each[2]);
+                usuarios.add(usuario);
+            }
+        } 
+
+        return usuarios;
     }
-    
+
 }

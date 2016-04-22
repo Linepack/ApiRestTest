@@ -6,50 +6,51 @@
 package org.linepack.apiresttest.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Objects;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  *
  * @author leandro
  */
-@Table(name = "WBUSUARI")
-@Entity
 @XmlRootElement
 public class Usuario implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @Column(name = "ds_email_acesso")
-    private String email;
+    private BigDecimal id;
+    private String nome;
+    private String caminhoFoto;
 
-    @Column(name = "ds_senha_acesso")
-    private String password;
-
-    public String getEmail() {
-        return email;
+    public BigDecimal getId() {
+        return id;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setId(BigDecimal id) {
+        this.id = id;
     }
 
-    public String getPassword() {
-        return password;
+    public String getNome() {
+        return nome;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getCaminhoFoto() {
+        return caminhoFoto;
+    }
+
+    public void setCaminhoFoto(String caminhoFoto) {
+        this.caminhoFoto = caminhoFoto;
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
+        int hash = 5;
+        hash = 41 * hash + Objects.hashCode(this.id);
         return hash;
     }
 
@@ -65,7 +66,7 @@ public class Usuario implements Serializable {
             return false;
         }
         final Usuario other = (Usuario) obj;
-        if (!Objects.equals(this.email, other.email)) {
+        if (!Objects.equals(this.id, other.id)) {
             return false;
         }
         return true;
@@ -73,7 +74,7 @@ public class Usuario implements Serializable {
 
     @Override
     public String toString() {
-        return "Usuario{" + "email=" + email + '}';
+        return "Usuario{" + "id=" + id + ", nome=" + nome + ", caminhoFoto=" + caminhoFoto + '}';
     }
 
 }
