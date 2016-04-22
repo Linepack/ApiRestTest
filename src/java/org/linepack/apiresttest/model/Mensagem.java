@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  *
  * @author leandro
  */
-@XmlRootElement
+@XmlRootElement(name = "dados")
 public class Mensagem implements Serializable {
 
     private String texto;

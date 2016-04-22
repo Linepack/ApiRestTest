@@ -5,9 +5,7 @@
  */
 package org.linepack.apiresttest.service;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -23,16 +21,67 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import org.linepack.apiresttest.model.Mensagem;
 import org.linepack.apiresttest.model.Usuario;
+import org.linepack.apiresttest.rest.UsuarioRest;
 
 /**
  *
  * @author leandro
  */
-@Path("login")
-public class Login {
+@Path("usuario")
+public class UsuarioService {
 
     @PersistenceContext(unitName = "homologa")
     private EntityManager em;
+
+    protected EntityManager getEntityManager() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("homologa");
+        em = emf.createEntityManager();
+        em.getTransaction().begin();
+        return em;
+    }
+
+    @GET
+    @Path("/")
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public UsuarioRest validaLogin(
+            @HeaderParam("email") String email,
+            @HeaderParam("password") String password,
+            @HeaderParam("token") String token) {
+
+        StoredProcedureQuery query = getEntityManager().createStoredProcedureQuery("pkg_unimob.prc_login_cooperado");
+
+        query.registerStoredProcedureParameter("p_email", String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_senha", String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_token", String.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_mensagem", String.class, ParameterMode.OUT);
+        query.registerStoredProcedureParameter("p_data", Usuario.class, ParameterMode.REF_CURSOR);
+
+        query.setParameter("p_email", email);
+        query.setParameter("p_senha", password);
+        query.setParameter("p_token", token);
+
+        boolean execute = query.execute();
+
+        List<Object> results = (List<Object>) query.getResultList();
+        Usuario usuario = new Usuario();
+        Mensagem msg = new Mensagem();
+
+        if (results != null) {
+            Object[] each = (Object[]) results.get(0);
+            usuario.setId((BigDecimal) each[0]);
+            usuario.setNome((String) each[1]);
+            usuario.setCaminhoFoto((String) each[2]);
+            msg.setTexto("");
+        } else {            
+            msg.setTexto((String) query.getOutputParameterValue("p_mensagem"));            
+        }
+
+        UsuarioRest retorno = new UsuarioRest();
+        retorno.setUsuario(usuario);
+        retorno.setMensagem(msg);
+
+        return retorno;
+    }
 
     /*
     @POST
@@ -78,51 +127,4 @@ public class Login {
     }
 
      */
-    protected EntityManager getEntityManager() {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("homologa");
-        em = emf.createEntityManager();
-        em.getTransaction().begin();
-        return em;
-    }
-
-    @GET
-    @Path("{email}/{password}")
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    public List<Usuario> validaLogin(
-            @PathParam("email") String email,
-            @PathParam("password") String password,
-            @HeaderParam("token") String token) {
-
-        StoredProcedureQuery query = getEntityManager().createStoredProcedureQuery("pkg_unimob.prc_login_cooperado");
-
-        query.registerStoredProcedureParameter("p_email", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_senha", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_token", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_mensagem", String.class, ParameterMode.OUT);
-        query.registerStoredProcedureParameter("p_data", Usuario.class, ParameterMode.REF_CURSOR);
-
-        query.setParameter("p_email", email);
-        query.setParameter("p_senha", password);
-        query.setParameter("p_token", token);
-
-        boolean execute = query.execute();
-
-        List<Usuario> usuarios = new ArrayList<Usuario>();
-        List<Object> results = (List<Object>) query.getResultList();
-                
-        if (results != null) {
-            for (Object elem : results) {
-                Object[] each = (Object[]) elem;
-                
-                Usuario usuario = new Usuario();
-                usuario.setId((BigDecimal) each[0]);
-                usuario.setNome((String) each[1]);
-                usuario.setCaminhoFoto((String) each[2]);
-                usuarios.add(usuario);
-            }
-        } 
-
-        return usuarios;
-    }
-
 }
