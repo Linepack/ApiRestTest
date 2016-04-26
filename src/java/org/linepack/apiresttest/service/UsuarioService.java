@@ -5,14 +5,11 @@
  */
 package org.linepack.apiresttest.service;
 
-import java.math.BigDecimal;
-import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.ParameterMode;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
-import javax.persistence.StoredProcedureQuery;
+import javax.persistence.Query;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
@@ -30,56 +27,44 @@ import org.linepack.apiresttest.rest.UsuarioRest;
 @Path("usuario")
 public class UsuarioService {
 
-    @PersistenceContext(unitName = "homologa")
+    @PersistenceContext(unitName = "derby")
     private EntityManager em;
 
     protected EntityManager getEntityManager() {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("homologa");
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("derby");
         em = emf.createEntityManager();
         em.getTransaction().begin();
         return em;
     }
 
     @GET
-    @Path("/")
+    @Path("{nome}/{password}")
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public UsuarioRest validaLogin(
-            @HeaderParam("email") String email,
-            @HeaderParam("password") String password,
-            @HeaderParam("token") String token) {
-
-        StoredProcedureQuery query = getEntityManager().createStoredProcedureQuery("pkg_unimob.prc_login_cooperado");
-
-        query.registerStoredProcedureParameter("p_email", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_senha", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_token", String.class, ParameterMode.IN);
-        query.registerStoredProcedureParameter("p_mensagem", String.class, ParameterMode.OUT);
-        query.registerStoredProcedureParameter("p_data", Usuario.class, ParameterMode.REF_CURSOR);
-
-        query.setParameter("p_email", email);
-        query.setParameter("p_senha", password);
-        query.setParameter("p_token", token);
-
-        boolean execute = query.execute();
-
-        List<Object> results = (List<Object>) query.getResultList();
+            @PathParam("nome") String nome,
+            @PathParam("password") String password){
+        
+        Query query = getEntityManager().createQuery(
+                 "select u "
+                 + "from Usuario u "
+                 +"where u.nome = '"+nome+"' "
+                 + " and u.senha = '"+password+"'", Usuario.class);
+        
         Usuario usuario = new Usuario();
-        Mensagem msg = new Mensagem();
-
-        if (results != null) {
-            Object[] each = (Object[]) results.get(0);
-            usuario.setId((BigDecimal) each[0]);
-            usuario.setNome((String) each[1]);
-            usuario.setCaminhoFoto((String) each[2]);
-            msg.setTexto("");
-        } else {            
-            msg.setTexto((String) query.getOutputParameterValue("p_mensagem"));            
+        Mensagem msg =  new Mensagem();
+        if (!query.getResultList().isEmpty()){
+            for (Object obj : query.getResultList()){
+                usuario = (Usuario) obj;
+                usuario.setSenha("");
+            }
+        }else{
+            msg.setTexto("Usuário e senha incorretos.");
         }
-
+        
         UsuarioRest retorno = new UsuarioRest();
         retorno.setUsuario(usuario);
         retorno.setMensagem(msg);
-
+        
         return retorno;
     }
 

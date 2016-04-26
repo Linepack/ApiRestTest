@@ -8,6 +8,8 @@ package org.linepack.apiresttest.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -15,13 +17,15 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author leandro
  */
 @XmlRootElement(name = "dados")
+@Entity
 public class Usuario implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Id
     private BigDecimal id;
     private String nome;
-    private String caminhoFoto;
+    private String senha;
 
     public BigDecimal getId() {
         return id;
@@ -39,12 +43,12 @@ public class Usuario implements Serializable {
         this.nome = nome;
     }
 
-    public String getCaminhoFoto() {
-        return caminhoFoto;
+    public String getSenha() {
+        return senha;
     }
 
-    public void setCaminhoFoto(String caminhoFoto) {
-        this.caminhoFoto = caminhoFoto;
+    public void setSenha(String senha) {
+        this.senha = senha;
     }
 
     @Override
@@ -74,7 +78,7 @@ public class Usuario implements Serializable {
 
     @Override
     public String toString() {
-        return "Usuario{" + "id=" + id + ", nome=" + nome + ", caminhoFoto=" + caminhoFoto + '}';
+        return "Usuario{" + "id=" + id + ", nome=" + nome + ", caminhoFoto= '}'";
     }
 
 }
